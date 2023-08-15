@@ -1,2 +1,2 @@
-# LArDRIfT
-Liquid Argon Dead Region Inference Taskforce
+# LArDRIP
+Liquid Argon Dead Region Inference Project
