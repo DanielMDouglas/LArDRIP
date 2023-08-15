@@ -1,2 +1,2 @@
 # LArDRIfT
-Liquid Argon Dead Region Inference Taskforce
+Liquid Argon Dead Region Inference Team
