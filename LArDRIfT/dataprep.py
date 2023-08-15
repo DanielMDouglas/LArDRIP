@@ -63,12 +63,9 @@ class patchPrepper:
         # corners of "module" boundaries
         # These are the regions without any real dead space
         # chosen to be a few voxels inboard of the actual boundary
-        # self.moduleBounds = [[[156, 163], [,], [,]]
-        #                      [[156, 163], [,], [,]]
-        #                      [[156, 163], [,], [,]]
-        #                      ]
         
         # these are just contiguous 100x200x100 voxel spaces
+        # NOTE: not used currently
         self.moduleBounds = [[[25, 125], [50, 250], [25, 125]],
                              [[25, 125], [50, 250], [175, 275]],
                              [[175, 275], [50, 250], [25, 125]],
@@ -101,7 +98,7 @@ class patchPrepper:
                             for zInd in range(self.patchScheme[2])]
         
     def imageSelector(self, vox, data):
-        # pick a module within this event that has
+        # pick an image volume within this event that has
         # some filled voxels
 
         # find an interesting region within an event window
@@ -116,7 +113,7 @@ class patchPrepper:
                 maxHits = nHitsPerCluster
                 largestCluster = clusterLabel
 
-        clusterMask = clustering.labels_ == clusterLabel
+        clusterMask = clustering.labels_ == largestCluster
         clusterVox = vox[clusterMask]
         clusterData = data[clusterMask]
         
@@ -151,6 +148,8 @@ class patchPrepper:
         for patchIndex, thisPatchBound in enumerate(self.patchBounds):
             maskedVox, maskedData = select_within_box(vox, data, thisPatchBound)
 
+            # subtract the patch lower left corner so that
+            # the voxel indices are relative to the patch
             maskedVox -= np.array([thisPatchBound[0][0],
                                    thisPatchBound[1][0],
                                    thisPatchBound[2][0],
@@ -178,19 +177,19 @@ class patchPrepper:
                 continue
 
 patchBounds_dtype = np.dtype([("patchInd", "u4"),
-                              ("xmin", "u4"),
-                              ("xmax", "u4"),
-                              ("ymin", "u4"),
-                              ("ymax", "u4"),
-                              ("zmin", "u4"),
-                              ("zmax", "u4"),
+                              ("xmin", "i4"),
+                              ("xmax", "i4"),
+                              ("ymin", "i4"),
+                              ("ymax", "i4"),
+                              ("zmin", "i4"),
+                              ("zmax", "i4"),
                               ])
 
 imagePatch_dtype = np.dtype([("imageInd", "u4"),
                              ("patchInd", "u4"),
-                             ("voxx", "u4"),
-                             ("voxy", "u4"),
-                             ("voxz", "u4"),
+                             ("voxx", "i4"),
+                             ("voxy", "i4"),
+                             ("voxz", "i4"),
                              ("voxq", "f4"),
                              ])
             
