@@ -1,3 +1,5 @@
+![alt text](https://github.com/DanielMDouglas/LArDRIP/blob/main/logo.png?raw=true)
+
 # LArDRIP - Liquid Argon Dead Region Inference Project
 
 This package is a work-in-progress for generating inferred signals in dead regions of a DUNE-ND-like liquid argon time projection chamber (LArTPC).  Right now, the targeted architecture for this model is a (masked autoencoder)[https://arxiv.org/abs/2111.06377], which is to be adapted to sparse 3D images.
