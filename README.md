@@ -2,7 +2,7 @@
 
 # LArDRIP - Liquid Argon Dead Region Inference Project
 
-This package is a work-in-progress for generating inferred signals in dead regions of a DUNE-ND-like liquid argon time projection chamber (LArTPC).  Right now, the targeted architecture for this model is a (masked autoencoder)[https://arxiv.org/abs/2111.06377], which is to be adapted to sparse 3D images.
+This package is a work-in-progress for generating inferred signals in dead regions of a DUNE-ND-like liquid argon time projection chamber (LArTPC).  Right now, the targeted architecture for this model is a [masked autoencoder](https://arxiv.org/abs/2111.06377), which is to be adapted to sparse 3D images.
 
 The framework is being developed with the DUNE-ND 2x2 prototype in mind, and development is utilizing existing 2x2 simulation starting from the `larnd2supera` stage.  Small subrun samples can be found on SLAC's SDF computing system in `/sdf/group/neutrino/cyifan/larnd2supera/larcv_output/output_00679-larcv.root` (thank you to Yifan and others for providing these samples!)
 
