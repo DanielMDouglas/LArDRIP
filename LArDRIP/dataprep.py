@@ -4,24 +4,13 @@ from tqdm import tqdm
 
 from sklearn.cluster import DBSCAN
 
-from larcv import larcv
-from ROOT import TChain
-
-def select_within_box(vox, data, bounds):
-    keptVoxelMask = vox[:, 0] >= bounds[0][0]
-    keptVoxelMask = np.logical_and(keptVoxelMask, vox[:, 0] < bounds[0][1])
-    keptVoxelMask = np.logical_and(keptVoxelMask, vox[:, 1] >= bounds[1][0])
-    keptVoxelMask = np.logical_and(keptVoxelMask, vox[:, 1] < bounds[1][1])
-    keptVoxelMask = np.logical_and(keptVoxelMask, vox[:, 2] >= bounds[2][0])
-    keptVoxelMask = np.logical_and(keptVoxelMask, vox[:, 2] < bounds[2][1])
-
-    maskedVox = vox[keptVoxelMask]
-    maskedData = data[keptVoxelMask]
-
-    return maskedVox, maskedData
+from utils import *
     
-class dataset:
+class dataset_larcv:
     def __init__(self, inputFiles):
+        from larcv import larcv
+        from ROOT import TChain
+
         self.chain = TChain("sparse3d_packets_tree")
         for inputFile in inputFiles:
             self.chain.AddFile(inputFile)
@@ -46,6 +35,44 @@ class dataset:
 
     def __iter__(self):
         # more fancy sampler to come...
+        # sequential sampling for testing
+        # sampleOrder = np.arange(self.n_entries)
+        sampleOrder = np.random.choice(self.n_entries,
+                                       size = self.n_entries,
+                                       replace = False)
+        # add augmentation?
+        # reflect x, y, z
+        # swap x <-> z
+        for idx in sampleOrder:
+            yield self[idx]
+
+class dataset_voxedep:
+    def __init__(self, inputFiles):
+        # just read one file for now.  FIX THIS!
+        self.voxels = h5py.File(inputFiles[0])['track_voxels'][:]
+
+        self.eventIDs = np.unique(self.voxels['eventID'])
+        self.n_entries = len(self.eventIDs)
+
+        # voxel coordinates are in cm,
+        # in 3.8 mm (pixel pitch) voxels
+        self.pitch = 0.38 
+
+    def __getitem__(self, eventIndex):
+
+        eventMask = self.voxels['eventID'] == self.eventIDs[eventIndex]
+        eventVoxels = self.voxels[eventMask]
+
+        np_voxels = np.array([np.cast[int](eventVoxels['xBin']/self.pitch),
+                              np.cast[int](eventVoxels['yBin']/self.pitch),
+                              np.cast[int](eventVoxels['zBin']/self.pitch)]).T
+        np_data = np.array([eventVoxels['dE']]).T
+
+        return np_voxels, np_data
+
+    def __iter__(self):
+        # more fancy sampler to come...
+        # sequential sampling for testing
         # sampleOrder = np.arange(self.n_entries)
         sampleOrder = np.random.choice(self.n_entries,
                                        size = self.n_entries,
@@ -72,12 +99,13 @@ class patchPrepper:
                              [[175, 275], [50, 250], [175, 275]],
         ]
 
-        self.imageSize = [30, 30, 30]
+        self.imageSize = [50, 50, 50]
         
         # how to chunk up the module volume
-        self.patchScheme = [6,
-                            6,
-                            6,
+        # number of patches per image edge
+        self.patchScheme = [5,
+                            5,
+                            5,
         ]
         
         xPatchEdges = np.linspace(0, self.imageSize[0],
@@ -104,7 +132,9 @@ class patchPrepper:
         # find an interesting region within an event window
         # do this using a very loose (~ the image size) DBSCAN
         # take the biggest cluster and center the image on that
-        clustering = DBSCAN(eps = self.imageSize[0],
+        # clustering = DBSCAN(eps = self.imageSize[0],
+        #                     min_samples = 1).fit(vox)
+        clustering = DBSCAN(eps = 3,
                             min_samples = 1).fit(vox)
         maxHits = 0
         for clusterLabel in np.unique(clustering.labels_):
@@ -171,8 +201,8 @@ class patchPrepper:
             try:
                 vox, data = self.imageSelector(vox, data)
                 patches = self.patcher(vox, data)
-
-                yield patches
+                if len(patches) > 2:
+                    yield patches
             except ValueError:
                 continue
 
@@ -194,7 +224,12 @@ imagePatch_dtype = np.dtype([("imageInd", "u4"),
                              ])
             
 def main(args):
-    d = dataset(args.inputRoot)
+    if '.root' in args.inputFile[0]:
+        d = dataset_larcv(args.inputFile)
+    elif '.h5' in args.inputFile[0]:
+        d = dataset_voxedep(args.inputFile)
+    else:
+        raise TypeError ("not a valid input filetype!")
 
     pp = patchPrepper(d)
 
@@ -214,16 +249,26 @@ def main(args):
     print ("recording patch data...")
     patchedData = np.empty((0,), dtype = imagePatch_dtype)
     for imageInd, patchedImage in tqdm(enumerate(pp)):
-        thisPatch = np.empty((len(patchedImage),), dtype = imagePatch_dtype)
-        thisPatch["imageInd"][:] = imageInd
+        # print (len(patchedImage))
+        # print (len(patchedImage[0]))
+        # print ("pi0",patchedImage[0][1].shape)
         for i, thisPatchData in enumerate(patchedImage):
-            thisPatch["patchInd"][i] = thisPatchData[0]
-            for vox, data in zip(thisPatchData[1], thisPatchData[2]):
-                thisPatch["voxx"][i] = vox[0]
-                thisPatch["voxy"][i] = vox[1]
-                thisPatch["voxz"][i] = vox[2]
-                thisPatch["voxq"][i] = data[0]
-        patchedData = np.concatenate((patchedData, thisPatch))
+            # print ("thispatchdata",thisPatchData[1])
+            thisPatch = np.empty((len(thisPatchData[1]),), dtype = imagePatch_dtype)
+            thisPatch["imageInd"][:] = imageInd
+            thisPatch["patchInd"][:] = thisPatchData[0]
+            # for vox, data in zip(thisPatchData[1], thisPatchData[2]):
+            #     print (vox)
+            # thisPatch["voxx"][:] = vox[:,0]
+            # thisPatch["voxy"][:] = vox[:,1]
+            # thisPatch["voxz"][:] = vox[:,2]
+            # thisPatch["voxq"][:] = data[0]
+            thisPatch["voxx"][:] = thisPatchData[1][:,0]
+            thisPatch["voxy"][:] = thisPatchData[1][:,1]
+            thisPatch["voxz"][:] = thisPatchData[1][:,2]
+            thisPatch["voxq"][:] = thisPatchData[2][0]
+            # print (thisPatch)
+            patchedData = np.concatenate((patchedData, thisPatch))
 
     with h5py.File(args.preppedOutput, 'a') as f:
         f['patchBounds'] = patchBounds
@@ -233,9 +278,9 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser("Make training images from protoDUNE-ND 2x2 simulation")
-    parser.add_argument("inputRoot",
+    parser.add_argument("inputFile",
                         nargs = '+',
-                        help = "input 2x2 larcv file")
+                        help = "input 2x2 larcv or voxelized edep-sim file")
     parser.add_argument("preppedOutput",
                         help = "output patched images [hdf5]")
 
