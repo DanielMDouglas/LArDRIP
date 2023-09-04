@@ -5,10 +5,13 @@ from tqdm import tqdm
 from sklearn.cluster import DBSCAN
 
 from utils import *
-    
+
+from larcv import larcv
+from ROOT import TChain
+
 class dataset_larcv:
     def __init__(self, inputFiles):
-        from larcv import larcv
+        from larcv import larcv #these two imports may not be necessary
         from ROOT import TChain
 
         self.chain = TChain("sparse3d_packets_tree")
