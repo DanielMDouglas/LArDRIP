@@ -61,8 +61,7 @@ class MAEdataloader:
         patchIndices = np.unique(patches['patchInd'])
         nPatches = len(patchIndices)
         nKept = int((1 - self.maskFraction)*nPatches)
-        print (nPatches, nKept)
-
+        
         patchChoice = np.random.choice(patchIndices,
                                        size = nKept,
                                        replace = False)

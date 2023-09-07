@@ -117,18 +117,19 @@ class DownSample(torch.nn.Module):
         return out
 
 class ResNetEncoder(torch.nn.Module):
-    def __init__(self, in_features, depth = 2, nFilters = 16, name='uresnet'):
+    def __init__(self, in_features, kernel_size = 3, depth = 2, nFilters = 16, name='uresnet'):
         super(ResNetEncoder, self).__init__()
 
         self.depth = depth # number of pool/unpool layers, not including input + output
         self.nFilters = nFilters
         self.in_features = in_features
+        self.kernel_size = kernel_size
         
         self.input_block = nn.Sequential(
             ME.MinkowskiConvolution(
                 in_channels = self.in_features,
                 out_channels = self.nFilters,
-                kernel_size = 3,
+                kernel_size = self.kernel_size,
                 stride = 1,
                 dimension = 3,
             ) 
@@ -151,8 +152,14 @@ class ResNetEncoder(torch.nn.Module):
                     dimension = 3)
             )
             self.encoding_blocks.append(
-                ResNetBlock(self.featureSizesEnc[i][1],
-                            self.featureSizesEnc[i][1])
+                nn.Sequential(
+                    ResNetBlock(self.featureSizesEnc[i][1],
+                                self.featureSizesEnc[i][1],
+                                self.kernel_size),
+                    ResNetBlock(self.featureSizesEnc[i][1],
+                                self.featureSizesEnc[i][1],
+                                self.kernel_size),
+                )
             )
         self.encoding_layers = nn.Sequential(*self.encoding_layers)
         self.encoding_blocks = nn.Sequential(*self.encoding_blocks)

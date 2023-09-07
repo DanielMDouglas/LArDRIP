@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-from .layers import *
+from layers import *
 
 import numpy as np
 import yaml
@@ -14,7 +14,7 @@ import os
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')        
 
 class encoder(ME.MinkowskiNetwork):
-    def __init__(self, D):
+    def __init__(self, D = 3):
         super(encoder, self).__init__(D)
 
         in_feat = 1

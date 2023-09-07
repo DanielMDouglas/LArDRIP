@@ -249,25 +249,14 @@ def main(args):
     print ("recording patch data...")
     patchedData = np.empty((0,), dtype = imagePatch_dtype)
     for imageInd, patchedImage in tqdm(enumerate(pp)):
-        # print (len(patchedImage))
-        # print (len(patchedImage[0]))
-        # print ("pi0",patchedImage[0][1].shape)
         for i, thisPatchData in enumerate(patchedImage):
-            # print ("thispatchdata",thisPatchData[1])
             thisPatch = np.empty((len(thisPatchData[1]),), dtype = imagePatch_dtype)
             thisPatch["imageInd"][:] = imageInd
             thisPatch["patchInd"][:] = thisPatchData[0]
-            # for vox, data in zip(thisPatchData[1], thisPatchData[2]):
-            #     print (vox)
-            # thisPatch["voxx"][:] = vox[:,0]
-            # thisPatch["voxy"][:] = vox[:,1]
-            # thisPatch["voxz"][:] = vox[:,2]
-            # thisPatch["voxq"][:] = data[0]
             thisPatch["voxx"][:] = thisPatchData[1][:,0]
             thisPatch["voxy"][:] = thisPatchData[1][:,1]
             thisPatch["voxz"][:] = thisPatchData[1][:,2]
             thisPatch["voxq"][:] = thisPatchData[2][0]
-            # print (thisPatch)
             patchedData = np.concatenate((patchedData, thisPatch))
 
     with h5py.File(args.preppedOutput, 'a') as f:
