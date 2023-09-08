@@ -3,11 +3,12 @@ import matplotlib.pyplot as plt
 
 import torch
 import torch.nn as nn
+import torch.optim as optim
 
 import tqdm
 
 from dataloader import *
-from model import encoder
+from model import encoder, maskTokenGenerator, decoder
 
 def main(args):
     dl = MAEdataloader('../data/example/patched_voxEdep.h5',
@@ -18,11 +19,20 @@ def main(args):
     enc.train()
 
     # these two objects need to be defined!
-    # mtg = maskTokenGenerator()
-    # mtg.train()
+    mtg = maskTokenGenerator()
+    mtg.train()
     
-    # dec = decoder()
-    # dec.train()
+    dec = decoder()
+    dec.train()
+
+    lr = 1.e-4
+
+    optimizer = optim.Adam(enc.parameters(),
+                           # mtg.parameters(),
+                           # dec.parameters(),
+                           lr = lr)
+
+    criterion = nn.MSELoss()
 
     for patchBatch in dl:
         keptPatches = [i[0] for i in patchBatch]
@@ -38,8 +48,10 @@ def main(args):
 
         # inferrence_in_masked_regions = None
         
-        # loss = MSELoss()(maskedPatches, inferrence_in_masked_regions)
-    
+        # loss = criterion(maskedPatches, inferrence_in_masked_regions)
+
+        # loss.backward()
+        optimizer.step()    
 
 if __name__ == '__main__':
     import argparse
