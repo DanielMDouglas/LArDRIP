@@ -6,8 +6,6 @@ def select_within_box(vox, data, bounds):
     keptVoxelMask = np.logical_and(keptVoxelMask, vox[:, 0] < bounds[0][1])
     keptVoxelMask = np.logical_and(keptVoxelMask, vox[:, 1] >= bounds[1][0])
     keptVoxelMask = np.logical_and(keptVoxelMask, vox[:, 1] < bounds[1][1])
-    keptVoxelMask = np.logical_and(keptVoxelMask, vox[:, 2] >= bounds[2][0])
-    keptVoxelMask = np.logical_and(keptVoxelMask, vox[:, 2] < bounds[2][1])
 
     maskedVox = vox[keptVoxelMask]
     maskedData = data[keptVoxelMask]
@@ -22,91 +20,86 @@ def draw_rect_bounds(ax, bounds, **kwargs):
     
     ax.plot([bounds[0][0], bounds[0][1]],
             [bounds[1][0], bounds[1][0]],
-            [bounds[2][0], bounds[2][0]],
             **plotKwargs
             )
     ax.plot([bounds[0][0], bounds[0][1]],
             [bounds[1][1], bounds[1][1]],
-            [bounds[2][0], bounds[2][0]],
             **plotKwargs
             )
     ax.plot([bounds[0][0], bounds[0][1]],
             [bounds[1][0], bounds[1][0]],
-            [bounds[2][1], bounds[2][1]],
             **plotKwargs
             )
     ax.plot([bounds[0][0], bounds[0][1]],
             [bounds[1][1], bounds[1][1]],
-            [bounds[2][1], bounds[2][1]],
             **plotKwargs
             )
     
     ax.plot([bounds[0][0], bounds[0][0]],
             [bounds[1][0], bounds[1][1]],
-            [bounds[2][0], bounds[2][0]],
             **plotKwargs
             )
     ax.plot([bounds[0][1], bounds[0][1]],
             [bounds[1][0], bounds[1][1]],
-            [bounds[2][0], bounds[2][0]],
             **plotKwargs
             )
     ax.plot([bounds[0][0], bounds[0][0]],
             [bounds[1][0], bounds[1][1]],
-            [bounds[2][1], bounds[2][1]],
             **plotKwargs
             )
     ax.plot([bounds[0][1], bounds[0][1]],
             [bounds[1][0], bounds[1][1]],
-            [bounds[2][1], bounds[2][1]],
-            **plotKwargs
-            )
-
-    ax.plot([bounds[0][0], bounds[0][0]],
-            [bounds[1][0], bounds[1][0]],
-            [bounds[2][0], bounds[2][1]],
-            **plotKwargs
-            )
-    ax.plot([bounds[0][1], bounds[0][1]],
-            [bounds[1][0], bounds[1][0]],
-            [bounds[2][0], bounds[2][1]],
-            **plotKwargs
-            )
-    ax.plot([bounds[0][0], bounds[0][0]],
-            [bounds[1][1], bounds[1][1]],
-            [bounds[2][0], bounds[2][1]],
-            **plotKwargs
-            )
-    ax.plot([bounds[0][1], bounds[0][1]],
-            [bounds[1][1], bounds[1][1]],
-            [bounds[2][0], bounds[2][1]],
             **plotKwargs
             )
 
     return ax
 
-def draw_patched_image(ax, patches, patchScheme, **kwargs):
-    
-    patchOffsets = np.array([[patchScheme[i]['xmin'],
-                              patchScheme[i]['ymin'],
-                              patchScheme[i]['zmin']]
-                             for i in patches['patchInd']]).T
+def draw_patched_image(ax, patches, patchScheme, unravelled = True, **kwargs):
+
+    if unravelled:
+        patches = ravel_patches(patches, patchScheme)
+        
     patchPositions = np.array([patches['voxx'],
-                               patches['voxy'],
-                               patches['voxz']])
-    patchPositions += patchOffsets
+                               patches['voxy']])
 
     ax.scatter(*patchPositions,
                **kwargs
                )
-
+        
     ax.set_xlim(np.min(patchScheme['xmin']),
                 np.max(patchScheme['xmax']))
     ax.set_ylim(np.min(patchScheme['ymin']),
                 np.max(patchScheme['ymax']))
-    ax.set_zlim(np.min(patchScheme['zmin']),
-                np.max(patchScheme['zmax']))
 
     ax.legend(frameon = False)
 
     return ax
+
+def ravel_patches(patches, patchScheme):
+    
+    patchOffsets = np.array([[patchScheme[i]['xmin'],
+                              patchScheme[i]['ymin']]
+                             for i in patches['patchInd']]).T
+    patchPositions = np.array([patches['voxx'],
+                               patches['voxy']])
+    patchPositions += patchOffsets
+
+    newPatches = patches.copy()
+    newPatches['voxx'] = patchPositions[0]
+    newPatches['voxy'] = patchPositions[1]
+
+    return newPatches
+
+def densify(patches, patchBounds, patchSizes):    
+    denseImage = np.zeros((len(patchBounds), patchSizes[0][0], patchSizes[0][1],))
+    print (denseImage)
+    for patchInd, patchBound in enumerate(patchBounds):
+        for xi in range(patchSizes[0][0]):
+            for yi in range(patchSizes[0][1]):
+                mask = np.logical_and(np.logical_and(patches['voxx'] == xi,
+                                                     patches['voxy'] == yi),
+                                      patches['patchInd'] == patchInd)
+                if any(mask):
+                    denseImage[patchInd,xi,yi] = patches[mask]['voxq'][0]
+
+    return patches

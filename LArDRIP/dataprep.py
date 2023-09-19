@@ -64,8 +64,7 @@ class dataset_voxedep:
         eventVoxels = self.voxels[eventMask]
 
         np_voxels = np.array([np.cast[int](eventVoxels['xBin']/self.pitch),
-                              np.cast[int](eventVoxels['yBin']/self.pitch),
-                              np.cast[int](eventVoxels['zBin']/self.pitch)]).T
+                              np.cast[int](eventVoxels['yBin']/self.pitch)]).T
         np_data = np.array([eventVoxels['dE']]).T
 
         return np_voxels, np_data
@@ -99,14 +98,17 @@ class patchPrepper:
                              [[175, 275], [50, 250], [175, 275]],
         ]
 
-        self.imageSize = [50, 50, 50]
+        self.imageSize = [50, 50]
         
         # how to chunk up the module volume
         # number of patches per image edge
         self.patchScheme = [5,
                             5,
-                            5,
         ]
+
+        self.patchSize = [imgSize/nPatches
+                          for imgSize, nPatches in zip(self.imageSize, self.patchScheme)
+                          ]
         
         xPatchEdges = np.linspace(0, self.imageSize[0],
                                   self.patchScheme[0] + 1,
@@ -114,16 +116,11 @@ class patchPrepper:
         yPatchEdges = np.linspace(0, self.imageSize[1],
                                   self.patchScheme[1] + 1,
                                   dtype = np.int32)
-        zPatchEdges = np.linspace(0, self.imageSize[2],
-                                  self.patchScheme[2] + 1,
-                                  dtype = np.int32)
 
         self.patchBounds = [[[xPatchEdges[xInd], xPatchEdges[xInd+1]],
-                             [yPatchEdges[yInd], yPatchEdges[yInd+1]],
-                             [zPatchEdges[zInd], zPatchEdges[zInd+1]]]
+                             [yPatchEdges[yInd], yPatchEdges[yInd+1]]]
                             for xInd in range(self.patchScheme[0])
-                            for yInd in range(self.patchScheme[1])
-                            for zInd in range(self.patchScheme[2])]
+                            for yInd in range(self.patchScheme[1])]
         
     def imageSelector(self, vox, data):
         # pick an image volume within this event that has
@@ -155,7 +152,6 @@ class patchPrepper:
         # shift the image so that it doesn't overlap
         imageBounds = [[int(CoM[0] - self.imageSize[0]/2), int(CoM[0] + self.imageSize[0]/2)],
                        [int(CoM[1] - self.imageSize[1]/2), int(CoM[1] + self.imageSize[1]/2)],
-                       [int(CoM[2] - self.imageSize[2]/2), int(CoM[2] + self.imageSize[2]/2)],
                        ]
 
         vox, data = select_within_box(vox, data, imageBounds)
@@ -163,7 +159,6 @@ class patchPrepper:
         # so that voxel indices are relative to the image
         vox -= np.array([imageBounds[0][0],
                          imageBounds[1][0],
-                         imageBounds[2][0],
                          ])
         return vox, data
 
@@ -182,7 +177,6 @@ class patchPrepper:
             # the voxel indices are relative to the patch
             maskedVox -= np.array([thisPatchBound[0][0],
                                    thisPatchBound[1][0],
-                                   thisPatchBound[2][0],
                                    ])
             if len(maskedVox):
                 patches.append((patchIndex, maskedVox, maskedData))
@@ -211,15 +205,16 @@ patchBounds_dtype = np.dtype([("patchInd", "u4"),
                               ("xmax", "i4"),
                               ("ymin", "i4"),
                               ("ymax", "i4"),
-                              ("zmin", "i4"),
-                              ("zmax", "i4"),
                               ])
+
+patchSize_dtype = np.dtype([("nVoxX", "u4"),
+                            ("nVoxY", "u4"),
+                            ])
 
 imagePatch_dtype = np.dtype([("imageInd", "u4"),
                              ("patchInd", "u4"),
                              ("voxx", "i4"),
                              ("voxy", "i4"),
-                             ("voxz", "i4"),
                              ("voxq", "f4"),
                              ])
             
@@ -242,10 +237,13 @@ def main(args):
         theseBounds["xmax"] = patchBound[0][1]
         theseBounds["ymin"] = patchBound[1][0]
         theseBounds["ymax"] = patchBound[1][1]
-        theseBounds["zmin"] = patchBound[2][0]
-        theseBounds["zmax"] = patchBound[2][1]
         patchBounds = np.concatenate((patchBounds, theseBounds))
 
+    print ("recording patch sizes...")
+    patchSizes = np.empty((1,), dtype = patchSize_dtype)
+    patchSizes["nVoxX"] = pp.patchSize[0]
+    patchSizes["nVoxY"] = pp.patchSize[1]
+    
     print ("recording patch data...")
     patchedData = np.empty((0,), dtype = imagePatch_dtype)
     for imageInd, patchedImage in tqdm(enumerate(pp)):
@@ -255,14 +253,14 @@ def main(args):
             thisPatch["patchInd"][:] = thisPatchData[0]
             thisPatch["voxx"][:] = thisPatchData[1][:,0]
             thisPatch["voxy"][:] = thisPatchData[1][:,1]
-            thisPatch["voxz"][:] = thisPatchData[1][:,2]
             thisPatch["voxq"][:] = thisPatchData[2][0]
             patchedData = np.concatenate((patchedData, thisPatch))
 
     with h5py.File(args.preppedOutput, 'a') as f:
         f['patchBounds'] = patchBounds
         f['patchedData'] = patchedData
-            
+        f['patchSize'] = patchSizes
+        
 if __name__ == '__main__':
     import argparse
 

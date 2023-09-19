@@ -4,37 +4,12 @@ import numpy as np
 import torch
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-import MinkowskiEngine as ME
-
 from LArDRIP.utils import *
 
-def to_sparse_tensor(patchDataBatch):
-    patchDataCoordTensors = []
-    patchDataFeatureTensors = []
-    
-    for patchData in patchDataBatch:
-        coords = torch.FloatTensor(np.array([patchData['voxx'],
-                                             patchData['voxy'],
-                                             patchData['voxz'],
-                                             ])).T
-        feature = torch.FloatTensor(np.array([patchData['voxq'],
-                                              ])).T
-
-        patchDataCoordTensors.append(coords)
-        patchDataFeatureTensors.append(feature)
-
-    patchCoords, patchFeature = ME.utils.sparse_collate(patchDataCoordTensors,
-                                                        patchDataFeatureTensors,
-                                                        dtype = torch.int32)
-
-    patchData = ME.SparseTensor(features = patchFeature.to(device),
-                                coordinates = patchCoords.to(device))
-
-    return patchData
-    
 class MAEdataloader:
     def __init__(self, patched_image_input, maskFraction = 0.5, batchSize = 1):
         with h5py.File(patched_image_input, 'r') as f:
+            self.patchSizes = f['patchSize'][:]
             self.patchBounds = f['patchBounds'][:]
             self.patchData = f['patchedData'][:]
 
@@ -72,16 +47,19 @@ class MAEdataloader:
         maskedPatches = patches[~patchMask]
 
         return keptPatches, maskedPatches
-
+    
     def load_image(self, idx):
         imageIndex = self.imageLoadOrder[idx]
         imagePatchMask = self.patchData['imageInd'] == imageIndex 
 
         imagePatches = self.patchData[imagePatchMask]
+
         return imagePatches
-    
+
     def __getitem__(self, idx):
         imagePatches = self.load_image(idx)
+        # densePatches = densify(imagePatches, self.patchSizes)
+        ravelledPatches = ravel_patches(densePatches, self.patchBounds)
         maskedPatches = self.masker(imagePatches)
 
         return maskedPatches
@@ -92,7 +70,9 @@ class MAEdataloader:
             imagePatchMask = self.patchData['imageInd'] == imageIndex 
 
             imagePatches = self.patchData[imagePatchMask]
-            maskedPatches = self.masker(imagePatches)
+            # densePatches = densify(imagePatches, self.patchSizes)
+            # ravelledPatches = ravel_patches(densePatches, self.patchBounds)
+            maskedPatches = self.masker(ravelledPatches)
 
             patchBatch.append(maskedPatches)
 
@@ -118,19 +98,22 @@ if __name__ == '__main__':
     dl = MAEdataloader('../data/example/patched_voxEdep.h5')
 
     patches = dl.load_image(2)
+    patches = densify(patches, dl.patchBounds, dl.patchSizes)
+    patches = ravel_patches(patches, dl.patchBounds)
     kept, masked = dl.masker(patches)
 
     fig = plt.figure()
-    ax = fig.add_subplot(111, projection = '3d')
+    ax = fig.add_subplot(111)
     draw_patched_image(ax, kept, dl.patchBounds,
-                       color = 'red', label = 'kept')
+                       color = 'red', label = 'kept',
+                       unravelled = False)
     draw_patched_image(ax, masked, dl.patchBounds,
-                       color = 'blue', label = 'masked')
+                       color = 'blue', label = 'masked',
+                       unravelled = False)
     for thisPatchBound in dl.patchBounds:
         draw_rect_bounds(ax,
                          [[thisPatchBound['xmin'], thisPatchBound['xmax']],
-                          [thisPatchBound['ymin'], thisPatchBound['ymax']],
-                          [thisPatchBound['zmin'], thisPatchBound['zmax']]],
+                          [thisPatchBound['ymin'], thisPatchBound['ymax']]],
                          color = 'green'
                          )
     fig.savefig('imView.png')

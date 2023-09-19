@@ -10,24 +10,31 @@ import tqdm
 from dataloader import *
 from model import encoder, maskTokenGenerator, decoder
 
+import sys
+sys.path.append('./mae')
+import models_mae
+
 def main(args):
     dl = MAEdataloader('../data/example/patched_voxEdep.h5',
                        batchSize = 16,
                        )
     
-    enc = encoder()
-    enc.train()
+    # enc = encoder()
+    # enc.train()
 
-    # these two objects need to be defined!
-    mtg = maskTokenGenerator()
-    mtg.train()
+    # # these two objects need to be defined!
+    # mtg = maskTokenGenerator()
+    # mtg.train()
     
-    dec = decoder()
-    dec.train()
+    # dec = decoder()
+    # dec.train()
+    model = models_mae.mae_vit_large_patch16()
+    print (model)
 
     lr = 1.e-4
 
-    optimizer = optim.Adam(enc.parameters(),
+    optimizer = optim.Adam(model.parameters(),
+                           # enc.parameters(),
                            # mtg.parameters(),
                            # dec.parameters(),
                            lr = lr)
@@ -38,8 +45,8 @@ def main(args):
         keptPatches = [i[0] for i in patchBatch]
         maskedPatches = [i[1] for i in patchBatch]
         
-        keptPatches = to_sparse_tensor(keptPatches)
-        keptTokens = enc(keptPatches)
+        # keptPatches = to_sparse_tensor(keptPatches)
+        # keptTokens = enc(keptPatches)
 
         # maskTokens = mtg(maskedPatches)
         # tokenizedImage = torch.cat(keptTokens, maskTokens)
@@ -51,7 +58,7 @@ def main(args):
         # loss = criterion(maskedPatches, inferrence_in_masked_regions)
 
         # loss.backward()
-        optimizer.step()    
+        # optimizer.step()    
 
 if __name__ == '__main__':
     import argparse

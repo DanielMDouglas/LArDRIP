@@ -1,0 +1,3 @@
+[submodule "LArDRIP/LArDRIP/mae"]
+	path = LArDRIP/LArDRIP/mae
+	url = https://github.com/facebookresearch/mae.git
