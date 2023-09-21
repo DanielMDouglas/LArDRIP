@@ -15,8 +15,8 @@ sys.path.append('./mae')
 import models_mae
 
 def main(args):
-    dl = MAEdataloader('../data/example/patched_voxEdep.h5',
-                       batchSize = 16,
+    dl = MAEdataloader_dense2d('../data/example/dense_2d_voxEdep.h5',
+                       batchSize = 1,
                        )
     
     # enc = encoder()
@@ -28,7 +28,8 @@ def main(args):
     
     # dec = decoder()
     # dec.train()
-    model = models_mae.mae_vit_large_patch16()
+    # model = models_mae.mae_vit_large_patch16()
+    model = models_mae.MaskedAutoencoderViT(img_size=112, in_chans=1)
     print (model)
 
     lr = 1.e-4
@@ -41,20 +42,11 @@ def main(args):
 
     criterion = nn.MSELoss()
 
-    for patchBatch in dl:
-        keptPatches = [i[0] for i in patchBatch]
-        maskedPatches = [i[1] for i in patchBatch]
-        
-        # keptPatches = to_sparse_tensor(keptPatches)
-        # keptTokens = enc(keptPatches)
+    for imageBatch in dl:
+        imageBatch = torch.einsum('nhwc->nchw', imageBatch)
+        loss, out, mask = model(imageBatch.float(), mask_ratio = 0.5)
+        print (out)
 
-        # maskTokens = mtg(maskedPatches)
-        # tokenizedImage = torch.cat(keptTokens, maskTokens)
-        
-        # inferredImage = dec(tokenizedImage)
-
-        # inferrence_in_masked_regions = None
-        
         # loss = criterion(maskedPatches, inferrence_in_masked_regions)
 
         # loss.backward()

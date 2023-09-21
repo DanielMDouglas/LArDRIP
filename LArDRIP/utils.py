@@ -67,7 +67,7 @@ def draw_sparse_unpatched_image(ax, vox, data, **kwargs):
 
 def draw_dense_image(ax, img, **kwargs):
 
-    ax.imshow(np.log(img.T),
+    ax.imshow(np.log(img),
               origin = 'lower',
               **kwargs
               )

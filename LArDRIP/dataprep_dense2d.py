@@ -145,8 +145,9 @@ class imagePrepper:
 
     def densifier(self, vox, data):
         dense_image = np.zeros(shape = self.imageSize)
+        dense_image = np.expand_dims(dense_image, -1)
         for vox_i, data_i in zip(vox, data):
-            dense_image[vox_i[0], vox_i[1]] += data_i
+            dense_image[vox_i[0], vox_i[1], 0] += data_i
         
         return dense_image
     
@@ -167,24 +168,6 @@ class imagePrepper:
             except ValueError:
                 continue
 
-patchBounds_dtype = np.dtype([("patchInd", "u4"),
-                              ("xmin", "i4"),
-                              ("xmax", "i4"),
-                              ("ymin", "i4"),
-                              ("ymax", "i4"),
-                              ])
-
-patchSize_dtype = np.dtype([("nVoxX", "u4"),
-                            ("nVoxY", "u4"),
-                            ])
-
-imagePatch_dtype = np.dtype([("imageInd", "u4"),
-                             ("patchInd", "u4"),
-                             ("voxx", "i4"),
-                             ("voxy", "i4"),
-                             ("voxq", "f4"),
-                             ])
-            
 def main(args):
     if '.root' in args.inputFile[0]:
         d = dataset_larcv(args.inputFile)
@@ -196,7 +179,10 @@ def main(args):
     ip = imagePrepper(d)
     
     print ("recording dense image data...")
-    imageData = np.empty((0,ip.imageSize[0],ip.imageSize[1]))
+    imageData = np.empty((0,
+                          ip.imageSize[0],
+                          ip.imageSize[1],
+                          1))
     for imageInd, image in tqdm(enumerate(ip)):
         image = np.expand_dims(image, 0)
         imageData = np.concatenate((imageData, image))

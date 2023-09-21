@@ -87,6 +87,8 @@ class MAEdataloader_dense2d:
 
         imageIndices = np.arange(len(self.images))
 
+        self.imageSize = self.images.shape[1:]
+
         self.imageLoadOrder = np.random.choice(len(imageIndices),
                                                size = len(imageIndices),
                                                replace = False)
@@ -110,15 +112,15 @@ class MAEdataloader_dense2d:
         return image
         
     def __iter__(self):
-        patchBatch = []
+        imageBatch = torch.empty((0, self.imageSize[0], self.imageSize[1], 1))
         for imageIndex in self.imageLoadOrder:
             image = self.load_image(imageIndex)
+            image = torch.tensor(np.expand_dims(image, 0))
+            imageBatch = torch.cat((imageBatch, image))
 
-            patchBatch.append(image)
-
-            if len(patchBatch) == self.batchSize:
-                yield patchBatch
-                patchBatch = []
+            if len(imageBatch) == self.batchSize:
+                yield imageBatch
+                patchBatch = torch.empty((0, self.imageSize[0], self.imageSize[1]))
 
 if __name__ == '__main__':
     # as an example, this is how you can initialize and
