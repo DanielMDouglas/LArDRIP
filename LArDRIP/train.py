@@ -42,15 +42,33 @@ def main(args):
 
     criterion = nn.MSELoss()
 
-    for imageBatch in dl:
-        imageBatch = torch.einsum('nhwc->nchw', imageBatch)
+    # for now, let's train on a single image...
+    # for imageBatch in dl:
+    imageBatch = next(dl.__iter__())
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    draw_dense_image(ax, imageBatch.detach().numpy()[0],
+                     )
+    fig.savefig('inputImage.png')
+
+    imageBatch = torch.einsum('nhwc->nchw', imageBatch)
+    for n_iter in range(1000):
+        # imageBatch = torch.einsum('nhwc->nchw', imageBatch)
         loss, out, mask = model(imageBatch.float(), mask_ratio = 0.5)
         print (out)
 
-        # loss = criterion(maskedPatches, inferrence_in_masked_regions)
+        out = model.unpatchify(out)
+        out = torch.einsum('nchw->nhwc', out)
+        print (out.shape)
 
-        # loss.backward()
-        # optimizer.step()    
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        draw_dense_image(ax, out.detach().numpy()[0],
+                         )
+        fig.savefig('currentPred.png')
+
+        loss.backward()
+        optimizer.step()    
 
 if __name__ == '__main__':
     import argparse
