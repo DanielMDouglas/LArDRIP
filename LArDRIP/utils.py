@@ -54,6 +54,28 @@ def draw_rect_bounds(ax, bounds, **kwargs):
 
     return ax
 
+def draw_sparse_unpatched_image(ax, vox, data, **kwargs):
+
+    ax.scatter(*vox.T,
+               c = data.T,
+               **kwargs
+               )
+        
+    ax.legend(frameon = False)
+
+    return ax
+
+def draw_dense_image(ax, img, **kwargs):
+
+    ax.imshow(np.log(img.T),
+              origin = 'lower',
+              **kwargs
+              )
+        
+    ax.legend(frameon = False)
+
+    return ax
+
 def draw_patched_image(ax, patches, patchScheme, unravelled = True, **kwargs):
 
     if unravelled:

@@ -79,7 +79,47 @@ class MAEdataloader:
             if len(patchBatch) == self.batchSize:
                 yield patchBatch
                 patchBatch = []
-                
+
+class MAEdataloader_dense2d:
+    def __init__(self, image_input, batchSize = 1):
+        with h5py.File(image_input, 'r') as f:
+            self.images = f['images'][:]
+
+        imageIndices = np.arange(len(self.images))
+
+        self.imageLoadOrder = np.random.choice(len(imageIndices),
+                                               size = len(imageIndices),
+                                               replace = False)
+
+        # sequential load order for testing
+        # self.imageLoadOrder = np.arange(len(imageIndices))
+                                       
+        self.batchSize = batchSize
+
+    def load_image(self, idx):
+        imageIndex = self.imageLoadOrder[idx]
+
+        image = self.images[imageIndex]
+
+        return image
+
+    def __getitem__(self, idx):
+        image = self.load_image(idx)
+        # densePatches = densify(imagePatches, self.patchSizes)
+
+        return image
+        
+    def __iter__(self):
+        patchBatch = []
+        for imageIndex in self.imageLoadOrder:
+            image = self.load_image(imageIndex)
+
+            patchBatch.append(image)
+
+            if len(patchBatch) == self.batchSize:
+                yield patchBatch
+                patchBatch = []
+
 if __name__ == '__main__':
     # as an example, this is how you can initialize and
     # get batches from the data loader
@@ -95,25 +135,12 @@ if __name__ == '__main__':
     # patchInd is the static positional encoding of a patch within
     # an image (defined in the patchBounds)
 
-    dl = MAEdataloader('../data/example/patched_voxEdep.h5')
+    dl = MAEdataloader_dense2d('../data/example/dense_2d_voxEdep.h5')
 
-    patches = dl.load_image(2)
-    patches = densify(patches, dl.patchBounds, dl.patchSizes)
-    patches = ravel_patches(patches, dl.patchBounds)
-    kept, masked = dl.masker(patches)
+    thisImage = dl.load_image(2)
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    draw_patched_image(ax, kept, dl.patchBounds,
-                       color = 'red', label = 'kept',
-                       unravelled = False)
-    draw_patched_image(ax, masked, dl.patchBounds,
-                       color = 'blue', label = 'masked',
-                       unravelled = False)
-    for thisPatchBound in dl.patchBounds:
-        draw_rect_bounds(ax,
-                         [[thisPatchBound['xmin'], thisPatchBound['xmax']],
-                          [thisPatchBound['ymin'], thisPatchBound['ymax']]],
-                         color = 'green'
-                         )
+    draw_dense_image(ax, thisImage,
+                     )
     fig.savefig('imView.png')
