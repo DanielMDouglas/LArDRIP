@@ -40,6 +40,7 @@ import models_mae
 
 from engine_pretrain import train_one_epoch
 
+#left these here as an example
 loc = r"C:\Users\Hilary\Desktop\mae_main_new\LArDRIP"
 loc_path = r"C:\Users\Hilary\Desktop\mae_main_new\LArDRIP\train"
 
