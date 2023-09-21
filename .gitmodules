@@ -1,3 +1,3 @@
-[submodule "LArDRIP/LArDRIP/mae"]
-	path = LArDRIP/LArDRIP/mae
-	url = https://github.com/facebookresearch/mae.git
+[submodule "LArDRIP/mae"]
+	path = LArDRIP/mae
+	url = git@github.com:DanielMDouglas/mae.git
