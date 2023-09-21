@@ -56,6 +56,7 @@ def get_args_parser():
         type=int,
         help="Batch size per GPU (effective batch size is batch_size * accum_iter * # gpus",
     )
+    # I used 10 epochs for testing (I went all the way up to 200 at one point), but we can use more
     parser.add_argument("--epochs", default=10, type=int)
     parser.add_argument(
         "--accum_iter",
