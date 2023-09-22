@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 import torch.optim as optim
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 import tqdm
 
@@ -19,56 +20,63 @@ def main(args):
                        batchSize = 1,
                        )
     
-    # enc = encoder()
-    # enc.train()
+    model = models_mae.MaskedAutoencoderViT(img_size=112, in_chans=1).to(device)
 
-    # # these two objects need to be defined!
-    # mtg = maskTokenGenerator()
-    # mtg.train()
-    
-    # dec = decoder()
-    # dec.train()
-    # model = models_mae.mae_vit_large_patch16()
-    model = models_mae.MaskedAutoencoderViT(img_size=112, in_chans=1)
-    print (model)
-
-    lr = 1.e-4
+    lr = 1.e-3
 
     optimizer = optim.Adam(model.parameters(),
-                           # enc.parameters(),
-                           # mtg.parameters(),
-                           # dec.parameters(),
                            lr = lr)
-
-    criterion = nn.MSELoss()
 
     # for now, let's train on a single image...
     # for imageBatch in dl:
-    imageBatch = next(dl.__iter__())
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    draw_dense_image(ax, imageBatch.detach().numpy()[0],
-                     )
-    fig.savefig('inputImage.png')
+    imageBatch = next(dl.__iter__()).to(device)
 
     imageBatch = torch.einsum('nhwc->nchw', imageBatch)
-    for n_iter in range(1000):
+    max_iter = 10000
+    pbar = tqdm.tqdm(range(max_iter))
+    for n_iter in tqdm.tqdm(range(max_iter)):
         # imageBatch = torch.einsum('nhwc->nchw', imageBatch)
         loss, out, mask = model(imageBatch.float(), mask_ratio = 0.5)
-        print (out)
 
-        out = model.unpatchify(out)
-        out = torch.einsum('nchw->nhwc', out)
-        print (out.shape)
-
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        draw_dense_image(ax, out.detach().numpy()[0],
-                         )
-        fig.savefig('currentPred.png')
-
+        pbarMessage = " ".join(["iter:",
+                                str(n_iter),
+                                "loss:",
+                                str(round(loss.item(), 4))])
+        pbar.set_description(pbarMessage)
+                        
         loss.backward()
         optimizer.step()    
+
+    out = model.unpatchify(out)
+    out = torch.einsum('nchw->nhwc', out).detach().cpu()
+
+    mask = mask.detach()
+    mask = mask.unsqueeze(-1).repeat(1, 1, model.patch_embed.patch_size[0]**2 * model.num_chans)
+    mask = model.unpatchify(mask)
+    mask = torch.einsum('nchw->nhwc', mask).detach().cpu()
+
+    image = torch.einsum('nchw->nhwc', imageBatch).cpu()
+
+    im_masked = image * (1 - mask)
+
+    im_paste = image * (1 - mask) + out * mask
+
+    fig = plt.figure()
+
+    ax = fig.add_subplot(141)
+    draw_dense_image(ax, image[0])
+
+    ax = fig.add_subplot(142)
+    draw_dense_image(ax, im_masked[0])
+
+    ax = fig.add_subplot(143)
+    draw_dense_image(ax, out[0])
+
+    ax = fig.add_subplot(144)
+    draw_dense_image(ax, im_paste[0])
+
+    fig.savefig('finalPred.png')
+
 
 if __name__ == '__main__':
     import argparse
