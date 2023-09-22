@@ -9,8 +9,9 @@ reqs = ["numpy",
         "plotly",
         "pyaml",
         "h5py",
-        "larcv",
-        "torch",
+        # "larcv",
+        # "torch",
+        "timm==0.4.5",
         # "MinkowskiEngine",
         ]
 
