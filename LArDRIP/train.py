@@ -20,23 +20,31 @@ def main(args):
                        batchSize = 1,
                        )
     
-    model = models_mae.MaskedAutoencoderViT(img_size=112, in_chans=1).to(device)
+    # model = models_mae.MaskedAutoencoderViT(img_size=112, in_chans=1).to(device)
+    model = models_mae.MaskedAutoencoderViT(img_size=112, in_chans=3).to(device)
 
-    lr = 1.e-3
+    lr = 1.e-4
 
     optimizer = optim.Adam(model.parameters(),
                            lr = lr)
 
     # for now, let's train on a single image...
     # for imageBatch in dl:
-    imageBatch = next(dl.__iter__()).to(device)
+    # imageBatch = next(dl.__iter__()).to(device)
+    # print ('shape', imageBatch.shape)
+    from matplotlib.image import imread
+    # imageBatch = torch.tensor(np.expand_dims(np.mean(imread('../data/example/fox.jpg'), axis = -1), (0, -1)))
+    imageBatch = torch.tensor(np.expand_dims(imread('../data/example/fox.jpg'), 0))/256
+    print ('shape', imageBatch.shape)
+    # imageBatch -= torch.mean(imageBatch)
+    # imageBatch /= torch.std(imageBatch)
 
     imageBatch = torch.einsum('nhwc->nchw', imageBatch)
-    max_iter = 10000
+    max_iter = 10
     pbar = tqdm.tqdm(range(max_iter))
-    for n_iter in tqdm.tqdm(range(max_iter)):
+    for n_iter in pbar:
         # imageBatch = torch.einsum('nhwc->nchw', imageBatch)
-        loss, out, mask = model(imageBatch.float(), mask_ratio = 0.5)
+        loss, out, mask = model(imageBatch.float(), mask_ratio = 0.7)
 
         pbarMessage = " ".join(["iter:",
                                 str(n_iter),
@@ -49,6 +57,7 @@ def main(args):
 
     out = model.unpatchify(out)
     out = torch.einsum('nchw->nhwc', out).detach().cpu()
+    # out = out.detach().cpu()
 
     mask = mask.detach()
     mask = mask.unsqueeze(-1).repeat(1, 1, model.patch_embed.patch_size[0]**2 * model.num_chans)
@@ -62,6 +71,8 @@ def main(args):
     im_paste = image * (1 - mask) + out * mask
 
     fig = plt.figure()
+    fig.set_figheight(20)
+    fig.set_figwidth(80)
 
     ax = fig.add_subplot(141)
     draw_dense_image(ax, image[0])
