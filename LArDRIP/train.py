@@ -35,6 +35,7 @@ def main(args):
     from matplotlib.image import imread
     # imageBatch = torch.tensor(np.expand_dims(np.mean(imread('../data/example/fox.jpg'), axis = -1), (0, -1)))
     imageBatch = torch.tensor(np.expand_dims(imread('../data/example/fox.jpg'), 0))/256
+    imageBatch = imageBatch.to(device)
     print ('shape', imageBatch.shape)
     # imageBatch -= torch.mean(imageBatch)
     # imageBatch /= torch.std(imageBatch)
