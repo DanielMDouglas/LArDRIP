@@ -9,8 +9,8 @@ config:
   decoder_num_heads: 16
   mlp_ratio: 4
 outdir: test
-trainData: ../data/example/dense_2d_voxEdep_56x56_large.h5
-testData: ../data/example/dense_2d_voxEdep_56x56_large_test.h5
+trainData: ../data/example/dense_2d_voxEdep_56x56_example.h5
+testData: ../data/example/dense_2d_voxEdep_56x56_example_test.h5
 batchSize: 128
 maxEpoch: 1000
 lr: 1.e-7
