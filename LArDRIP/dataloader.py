@@ -81,23 +81,26 @@ class MAEdataloader:
                 patchBatch = []
 
 class MAEdataloader_dense2d:
-    def __init__(self, image_input, batchSize = 1):
+    def __init__(self, image_input, batchSize = 1, sequentialLoad = False):
         with h5py.File(image_input, 'r') as f:
             self.images = f['images'][:]
 
-        imageIndices = np.arange(len(self.images))
-
         self.imageSize = self.images.shape[1:]
 
-        self.imageLoadOrder = np.random.choice(len(imageIndices),
-                                               size = len(imageIndices),
-                                               replace = False)
-
-        # sequential load order for testing
-        # self.imageLoadOrder = np.arange(len(imageIndices))
-                                       
         self.batchSize = batchSize
 
+        self.sequentialLoad = sequentialLoad
+
+    def gen_load_order(self):
+        imageIndices = np.arange(len(self.images))
+
+        if self.sequentialLoad:
+            self.imageLoadOrder = np.arange(len(imageIndices))
+        else:
+            self.imageLoadOrder = np.random.choice(len(imageIndices),
+                                                   size = len(imageIndices),
+                                                   replace = False)
+        
     def load_image(self, idx):
         imageIndex = self.imageLoadOrder[idx]
 
@@ -107,12 +110,12 @@ class MAEdataloader_dense2d:
 
     def __getitem__(self, idx):
         image = self.load_image(idx)
-        # densePatches = densify(imagePatches, self.patchSizes)
 
         return image
-        
+
     def __iter__(self):
         imageBatch = torch.empty((0, self.imageSize[0], self.imageSize[1], 1))
+        self.gen_load_order()
         for imageIndex in self.imageLoadOrder:
             image = self.load_image(imageIndex)
             image = torch.tensor(np.expand_dims(image, 0))
@@ -120,7 +123,7 @@ class MAEdataloader_dense2d:
 
             if len(imageBatch) == self.batchSize:
                 yield imageBatch
-                patchBatch = torch.empty((0, self.imageSize[0], self.imageSize[1]))
+                imageBatch = torch.empty((0, self.imageSize[0], self.imageSize[1], 1))
 
 if __name__ == '__main__':
     # as an example, this is how you can initialize and

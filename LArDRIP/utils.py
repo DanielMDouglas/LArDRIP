@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import torch
 
 def select_within_box(vox, data, bounds):
     keptVoxelMask = vox[:, 0] >= bounds[0][0]
@@ -72,7 +73,7 @@ def draw_dense_image(ax, img, **kwargs):
     #           **kwargs
     #           )
     ax.imshow(img,
-              origin = 'lower',
+              # origin = 'lower',
               **kwargs
               )
         
@@ -116,7 +117,7 @@ def ravel_patches(patches, patchScheme):
 
     return newPatches
 
-def densify(patches, patchBounds, patchSizes):    
+def densify(patches, patchBounds, patchSizes):
     denseImage = np.zeros((len(patchBounds), patchSizes[0][0], patchSizes[0][1],))
     print (denseImage)
     for patchInd, patchBound in enumerate(patchBounds):
@@ -129,3 +130,36 @@ def densify(patches, patchBounds, patchSizes):
                     denseImage[patchInd,xi,yi] = patches[mask]['voxq'][0]
 
     return patches
+
+def plot_single_image_from_batch(model, imageBatch, out, mask, outfile):
+    out = model.unpatchify(out)
+    out = torch.einsum('nchw->nhwc', out).detach().cpu()
+
+    mask = mask.detach()
+    mask = mask.unsqueeze(-1).repeat(1, 1, model.patch_embed.patch_size[0]**2 * model.num_chans)
+    mask = model.unpatchify(mask)
+    mask = torch.einsum('nchw->nhwc', mask).detach().cpu()
+
+    image = torch.einsum('nchw->nhwc', imageBatch).cpu()
+
+    im_masked = image * (1 - mask)
+
+    im_paste = image * (1 - mask) + out * mask
+
+    fig = plt.figure()
+    fig.set_figheight(20)
+    fig.set_figwidth(80)
+
+    ax = fig.add_subplot(141)
+    draw_dense_image(ax, image[0])
+
+    ax = fig.add_subplot(142)
+    draw_dense_image(ax, im_masked[0])
+
+    ax = fig.add_subplot(143)
+    draw_dense_image(ax, out[0])
+
+    ax = fig.add_subplot(144)
+    draw_dense_image(ax, im_paste[0])
+
+    fig.savefig(outfile)

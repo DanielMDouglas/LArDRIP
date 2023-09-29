@@ -48,15 +48,19 @@ class dataset_larcv:
 
 class dataset_voxedep:
     def __init__(self, inputFiles):
-        # just read one file for now.  FIX THIS!
-        self.voxels = h5py.File(inputFiles[0])['track_voxels'][:]
+        self.files = inputFiles
 
-        self.eventIDs = np.unique(self.voxels['eventID'])
-        self.n_entries = len(self.eventIDs)
+        self.n_files = len(inputFiles)
 
         # voxel coordinates are in cm,
         # in 3.8 mm (pixel pitch) voxels
         self.pitch = 0.38 
+
+    def load_next_file(self, fileInd):
+        self.voxels = h5py.File(self.files[fileInd])['track_voxels'][:]
+
+        self.eventIDs = np.unique(self.voxels['eventID'])
+        self.n_entries = len(self.eventIDs)
 
     def __getitem__(self, eventIndex):
 
@@ -71,16 +75,21 @@ class dataset_voxedep:
 
     def __iter__(self):
         # more fancy sampler to come...
-        # sequential sampling for testing
-        # sampleOrder = np.arange(self.n_entries)
-        sampleOrder = np.random.choice(self.n_entries,
-                                       size = self.n_entries,
-                                       replace = False)
         # add augmentation?
         # reflect x, y, z
         # swap x <-> z
-        for idx in sampleOrder:
-            yield self[idx]
+
+        fileLoadOrder = np.arange(self.n_files)
+        for fileIDX in fileLoadOrder:
+            self.load_next_file(fileIDX)
+            # sequential sampling for testing 
+            # (if sampling is done again in dataloader, this is fine)
+            sampleOrder = np.arange(self.n_entries)
+            # sampleOrder = np.random.choice(self.n_entries,
+            #                                size = self.n_entries,
+            #                                replace = False)
+            for idx in sampleOrder:
+                yield self[idx]
 
 class imagePrepper:
     def __init__(self, rawDataset):
@@ -98,7 +107,7 @@ class imagePrepper:
                              [[175, 275], [50, 250], [175, 275]],
         ]
 
-        self.imageSize = [112, 112]
+        self.imageSize = [56, 56]
         
         # how to chunk up the module volume
         # number of patches per image edge

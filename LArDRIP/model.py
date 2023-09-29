@@ -1,50 +1,27 @@
-import MinkowskiEngine as ME
-
 import torch
 import torch.nn as nn
 import torch.optim as optim
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-from layers import *
+from functools import partial
 
-import numpy as np
-import yaml
-import tqdm
-import os
+import sys
+sys.path.append('./mae')
+import models_mae
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')        
+class MAEViT_network (models_mae.MaskedAutoencoderViT):
+    def __init__(self, manifest):
+        super().__init__(in_chans = 1, norm_layer=partial(nn.LayerNorm, eps=1.e-6),
+                         **manifest['config'])
+        self.manifest = manifest
 
-class model (ME.MinkowskiNetwork):
-    def __init__(self, D = 3):
-        super(model, self).__init__(D)
+        # self.model = models_mae.MaskedAutoencoderViT(img_size=56, patch_size=8, in_chans=1,
+        #                                              embed_dim=512, depth=12, 
+        #                                              decoder_embed_dim=256, decoder_depth=4).to(device)
 
-        self.layers = [Identity()]
-        self.network = nn.Sequential(*self.layers)
-        
-    def forward(self, x):
-        return self.network(x)
+    def load_checkpoint(self, checkpointFile):
+        checkpoint = torch.load(checkpointFile, map_location = device)
+        self.load_state_dict(checkpoint['model'], strict = False)
 
-    def make_checkpoint(self, filename):
-        print ("saving checkpoint ", filename)
-        torch.save(dict(model = self.state_dict()), filename)
-
-    def load_checkpoint(self, filename):
-        print ("loading checkpoint ", filename)
-        with open(filename, 'rb') as f:
-            checkpoint = torch.load(f,
-                                    map_location = device)
-            self.load_state_dict(checkpoint['model'], strict=False)
-
-class encoder (model):
-    def __init__(self):
-        super(encoder, self).__init__()
-
-        self.layers = [ResNetEncoder(1, depth = 4)]
-        self.network = nn.Sequential(*self.layers)
-
-class maskTokenGenerator (model):
-    def __init__(self):
-        super(maskTokenGenerator, self).__init__()
-
-class decoder (model):
-    def __init__(self):
-        super(decoder, self).__init__()
+    def save_checkpoint(self, checkpointFile):
+        torch.save(dict(model = self.state_dict()), checkpointFile)
