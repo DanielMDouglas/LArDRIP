@@ -76,17 +76,18 @@ def split_arrays(array, split):
 
 total_samples = len(grey_images)
 
-train_size = 7839
-val_size = total_samples - train_size
+#train_size = 7839
+#val_size = total_samples - train_size
 
-x_train = grey_images[:train_size]
+#x_train = grey_images[:train_size]
 '''
 x_val = rgb_images[train_size:train_size + val_size]
 x_test = rgb_images[train_size + val_size]
 '''
 
 train_vs_rest = split_arrays(grey_images, 0.8)
-
+train_size = len(train_vs_rest[0])
+x_train = grey_images[:train_size]
 test_val = split_arrays(train_vs_rest[1], 0.5)
 
 '''
