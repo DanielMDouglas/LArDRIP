@@ -1,4 +1,3 @@
-#Hilary Utaegbulam
 import h5py
 import numpy as np
 #import cv2
@@ -31,14 +30,14 @@ BUFFER_SIZE = 200 #1024
 BATCH_SIZE = 128 #256
 AUTO = tf.data.AUTOTUNE
 INPUT_SHAPE = (32, 32, 1)
-#NUM_CLASSES = 10
+NUM_CLASSES = 10
 
 # OPTIMIZER
 LEARNING_RATE = 5e-3
 WEIGHT_DECAY = 1e-4
 
 # PRETRAINING
-EPOCHS = 1000
+EPOCHS = 2000
 
 # AUGMENTATION
 IMAGE_SIZE = 48  # We will resize input images to this size. 48
@@ -89,7 +88,6 @@ train_vs_rest = split_arrays(grey_images, 0.8)
 train_size = len(train_vs_rest[0])
 x_train = grey_images[:train_size]
 test_val = split_arrays(train_vs_rest[1], 0.5)
-
 '''
 #my own image processing 
 
@@ -199,6 +197,7 @@ class Patches(layers.Layer):
 
         # Reshape the patches to (batch, num_patches, patch_area) and return it.
         patches = self.resize(patches)
+        
         return patches
 
     def show_patched_image(self, images, patches):
@@ -777,9 +776,15 @@ plt.xlabel("Step", fontsize=14)
 plt.ylabel("LR", fontsize=14)
 plt.savefig('/global/homes/s/silentc/images/lr.png')
 plt.show()
+plt.figure().clear()
+plt.close()
+plt.cla()
+plt.clf()
 
 # Assemble the callbacks.
 train_callbacks = [TrainMonitor(epoch_interval=1)]
+
+
 
 """
 ## Model compilation and training
@@ -805,8 +810,39 @@ print(f"Loss: {loss:.2f}")
 print(f"MAE: {mae:.2f}")
 
 """
+## Plotting
+"""
+
+# list all data in history
+print(history.history.keys())
+
+# summarize history for accuracy
+plt.plot(history.history['mae'])
+plt.plot(history.history['val_mae'])
+plt.title('model mean square error')
+plt.ylabel('mae')
+plt.xlabel('epoch')
+plt.legend(['train', 'val'], loc='upper left')
+plt.savefig('/global/homes/s/silentc/images/mae.png')
+plt.show()
+plt.figure().clear()
+plt.close()
+plt.cla()
+plt.clf()
+# summarize history for loss
+plt.plot(history.history['loss'])
+plt.plot(history.history['val_loss'])
+plt.title('model loss')
+plt.ylabel('loss')
+plt.xlabel('epoch')
+plt.legend(['train', 'val'], loc='upper left')
+plt.savefig('/global/homes/s/silentc/images/loss.png')
+plt.show()
+
+"""
 ## Evaluation with linear probing
 """
+
 
 """
 ### Extract the encoder model along with other layers
