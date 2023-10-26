@@ -140,8 +140,12 @@ class imagePrepper:
         # TODO: if the image bounds overlap with the module bounds
         # (i.e. real dead space is included)
         # shift the image so that it doesn't overlap
-        imageBounds = [[int(CoM[0] - self.imageSize[0]/2), int(CoM[0] + self.imageSize[0]/2)],
-                       [int(CoM[1] - self.imageSize[1]/2), int(CoM[1] + self.imageSize[1]/2)],
+        windowShift = np.array([np.random.randint(self.imageSize[0]),
+                                np.random.randint(self.imageSize[1])])
+        imageBounds = [[int(CoM[0] + windowShift[0] - self.imageSize[0]/2), 
+                        int(CoM[0] + windowShift[0] + self.imageSize[0]/2)],
+                       [int(CoM[1] + windowShift[1] - self.imageSize[1]/2), 
+                        int(CoM[1] + windowShift[1] + self.imageSize[1]/2)],
                        ]
 
         vox, data = select_within_box(vox, data, imageBounds)
