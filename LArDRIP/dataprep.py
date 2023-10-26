@@ -48,15 +48,27 @@ class dataset_larcv:
 
 class dataset_voxedep:
     def __init__(self, inputFiles):
-        # just read one file for now.  FIX THIS!
-        self.voxels = h5py.File(inputFiles[0])['track_voxels'][:]
+        self.infileList = inputFiles
+
+        self.fileOrder = np.random.choice(len(self.infileList),
+                                          size = len(self.infileList),
+                                          replace = False)
+        # voxel coordinates are in cm,
+        # in 3.8 mm (pixel pitch) voxels
+        self.pitch = 0.38 
+
+    def load_next_file(self, fileInd):
+        thisInputFile = self.infileList[fileInd]
+        self.voxels = h5py.File(thisInputFile)['track_voxels'][:]
 
         self.eventIDs = np.unique(self.voxels['eventID'])
         self.n_entries = len(self.eventIDs)
 
-        # voxel coordinates are in cm,
-        # in 3.8 mm (pixel pitch) voxels
-        self.pitch = 0.38 
+        # sequential sampling for testing
+        # sampleOrder = np.arange(self.n_entries)
+        self.sampleOrder = np.random.choice(self.n_entries,
+                                            size = self.n_entries,
+                                            replace = False)
 
     def __getitem__(self, eventIndex):
 
@@ -72,16 +84,14 @@ class dataset_voxedep:
 
     def __iter__(self):
         # more fancy sampler to come...
-        # sequential sampling for testing
-        # sampleOrder = np.arange(self.n_entries)
-        sampleOrder = np.random.choice(self.n_entries,
-                                       size = self.n_entries,
-                                       replace = False)
-        # add augmentation?
-        # reflect x, y, z
-        # swap x <-> z
-        for idx in sampleOrder:
-            yield self[idx]
+        for i in self.fileOrder:
+            self.load_next_file(i)
+
+            # add augmentation?
+            # reflect x, y, z
+            # swap x <-> z
+            for idx in self.sampleOrder:
+                yield self[idx]
 
 class patchPrepper:
     def __init__(self, rawDataset):
