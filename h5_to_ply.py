@@ -3,7 +3,7 @@ import trimesh
 import numpy as np
 import matplotlib.cm as cm
 
-with h5py.File("path/to/h5/file", 'r') as f:
+with h5py.File("/path/to/h5_file.h5", 'r') as f:
     patched_data = f['patchedData']
     patch_bounds = f['patchBounds']
     
@@ -11,16 +11,18 @@ with h5py.File("path/to/h5/file", 'r') as f:
     num_images = len(np.unique(patched_data['imageInd']))
     num_patches = len(patch_bounds)
     
-    for img_ind in range(num_images):
+    for image_ind in range(num_images):
+        if image_ind == 5:
+            break
         # make an empty point cloud for each image
         vertices = []
         colors = []
         
         for patch_ind in range(num_patches):
-            image_indicies = np.where(patched_data['imageInd'] == image_ind)
-            patch_imdicies = np.where(patched_data['patchInd'] == patch_ind)
+            image_indices = np.where(patched_data['imageInd'] == image_ind)
+            patch_indices = np.where(patched_data['patchInd'] == patch_ind)
             
-            common_np.intersect1d(image_indices, patch_indices)
+            common_indices = np.intersect1d(image_indices, patch_indices)
             
             if len(common_indices) > 0:
                 voxx = patched_data['voxx'][common_indices]
@@ -54,6 +56,6 @@ with h5py.File("path/to/h5/file", 'r') as f:
         point_cloud = trimesh.points.PointCloud(vertices=all_vertices, colors=all_colors)
 
         # save the point cloud as a .ply file for each image
-        output_ply_file = f"/global/homes/s/silentc/point_cloud/point_clouds/output_point_cloud_{image_ind}.ply"
+        output_ply_file = f"/path/to/out_put_ply/{image_ind}.ply"
         point_cloud.export(output_ply_file, 'ply')
         print(f"Point cloud for imageInd {image_ind} saved to {output_ply_file}")
