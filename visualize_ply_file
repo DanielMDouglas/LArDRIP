@@ -1,0 +1,6 @@
+import open3d as o3d
+
+ply_file = '/global/cfs/projectdirs/dune/www/data/2x2/simulation/silentc_work/PCN-PyTorch/data/PCN/test/complete/02691156/1169d987dbbce76775f4ea0b85a53249.ply'
+pcd = o3d.io.read_point_cloud(ply_file)
+# Visualize the point cloud
+o3d.visualization.draw_plotly([pcd])
