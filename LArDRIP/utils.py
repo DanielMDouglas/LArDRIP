@@ -110,3 +110,20 @@ def draw_patched_image(ax, patches, patchScheme, **kwargs):
     ax.legend(frameon = False)
 
     return ax
+
+def draw_unpatched_image(ax, points, **kwargs):
+    
+    ax.scatter(*points,
+               **kwargs
+               )
+
+    ax.set_xlim(np.min(patchScheme['xmin']),
+                np.max(patchScheme['xmax']))
+    ax.set_ylim(np.min(patchScheme['ymin']),
+                np.max(patchScheme['ymax']))
+    ax.set_zlim(np.min(patchScheme['zmin']),
+                np.max(patchScheme['zmax']))
+
+    ax.legend(frameon = False)
+
+    return ax
