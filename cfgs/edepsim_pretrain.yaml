@@ -1,0 +1,49 @@
+optimizer : {
+  type: AdamW,
+  kwargs: {
+  lr : 0.0001,
+  weight_decay : 0.05
+}}
+
+scheduler: {
+  type: CosLR,
+  kwargs: {
+    epochs: 400,
+    initial_epochs : 20
+}}
+
+dataset : {
+  train : { _base_: cfgs/dataset_configs/edepsim.yaml,
+            others: {subset: 'train', npoints: 1024}},
+  val : { _base_: cfgs/dataset_configs/edepsim.yaml,
+            others: {subset: 'test', npoints: 1024}},
+  test : { _base_: cfgs/dataset_configs/edepsim.yaml,
+            others: {subset: 'test', npoints: 1024}}} #128 for all three
+
+model : {
+  NAME: Point_MAE,
+  group_size: 16,
+  num_group: 32,
+  loss: cdl2,
+  transformer_config: {
+    mask_ratio: 0.2,
+    mask_type: 'block',
+    trans_dim: 384,
+    encoder_dims: 384,
+    depth: 12,
+    drop_path_rate: 0.1,
+    num_heads: 6,
+    decoder_depth: 4,
+    decoder_num_heads: 6,
+  },
+  } #group_size = 4, num_groups = 8
+
+#128
+npoints: 1024
+#128
+total_bs : 128
+step_per_update : 1
+max_epoch : 400
+
+#group_size: 4 #probably mean the number of groups (size of groups) b/c number of centers is 32
+#num_group: 8 #probably mean number of points in each group b/c number of points in each center is 64
