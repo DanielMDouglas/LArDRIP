@@ -1,0 +1,26 @@
+point_mae_python main.py --val_freq 1 --config cfgs/edepsim_pretrain.yaml --exp_name train_on_one_npy_file
+
+point_mae_python main.py --config cfgs/edepsim_pretrain.yaml --exp_name train_on_one_npy_file
+
+#####
+
+point_mae_python main_vis.py --test --ckpts ./experiments/edepsim_pretrain/cfgs/train_on_one_npy_file/ckpt-last.pth --config cfgs/edepsim_pretrain.yaml --exp_name train_on_one_npy_file
+
+resuming training: point_mae_python main.py --ckpts ./experiments/edepsim_pretrain/cfgs/train_on_one_npy_file/ckpt-last.pth --config cfgs/edepsim_pretrain.yaml --exp_name train_on_one_npy_file --resume
+##### point_mae_python main.py --ckpts ./experiments/edepsim_pretrain/cfgs/train_one_mr_2/ckpt-epoch-400.pth --config cfgs/edepsim_pretrain.yaml --exp_name train_one_mr_2 --resume
+
+python main.py --config cfgs/edepsim_pretrain.yaml --exp_name test1_edepsim_plot
+python main_vis.py --test --ckpts ./experiments/edepsim_pretrain/cfgs/test1_edepsim_plot/ckpt-last.pth --config cfgs/edepsim_pretrain.yaml --exp_name test1_edepsim
+
+
+
+
+
+point_mae_pip install torch==1.9.1+cu111 torchvision==0.10.1+cu111 torchaudio==0.9.1 -f https://download.pytorch.org/whl/torch_stable.html
+
+
+
+
+
+
+point_mae_python running_test.py
