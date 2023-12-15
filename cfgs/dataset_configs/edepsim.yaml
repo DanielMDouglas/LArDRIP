@@ -1,0 +1,5 @@
+NAME: edepsim
+DATA_PATH: data/edepsim_npys/edepsim-55
+#1024
+N_POINTS: 1024 
+PC_PATH: data/edepsim_npys/edepsim_pc
