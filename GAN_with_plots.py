@@ -15,6 +15,8 @@ import random
 from torch_geometric.loader import DataLoader 
 import torch.nn.functional as F
 
+save_path = r'.../normalized_tracks_np_mul.npy'
+
 loaded_normalized_tracks_np = np.load(save_path)
 
 loaded_normalized_tracks_tensor = torch.from_numpy(loaded_normalized_tracks_np).float().to(device)  # or 'cuda' if you're using GPU
