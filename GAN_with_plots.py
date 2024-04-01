@@ -1,4 +1,4 @@
-from GNN_no_print import *
+from Generator_Discriminator.py import *
 from torch_geometric.data import Data, Dataset
 from torch_cluster import knn_graph
 from torch_geometric.data import Batch
