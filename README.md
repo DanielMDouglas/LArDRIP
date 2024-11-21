@@ -1,3 +1,5 @@
+This is an older version of the model. Find the latest repository here: https://github.com/silentkartographer/LArDRIP
+
 ![alt text](https://github.com/DanielMDouglas/LArDRIP/blob/main/logo.png?raw=true)
 
 # LArDRIP - Liquid Argon Dead Region Inference Project
